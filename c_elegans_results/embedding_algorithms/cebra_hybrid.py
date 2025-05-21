@@ -26,8 +26,15 @@ x = data.neuron_traces.T
 b = data.behaviour
 
 # prepare data
-x_, b_ = prep_data(x, b, win=1) # window tune?
+x_, b_ = prep_data(x, b, win=1)
 
+'''
+From hyperparameter optimisation we got:
+
+Minimum validation loss: 0.09375
+Best hyperparameters found were:  {'model_architecture': 'offset1-model-mse', 'batch_size': 512, 'learning_rate': 1.7239766706958178e-05, 'temperature': 0.1870932548798307, 'max_iterations': 10000, 'distance': 'cosine', 'time_offsets': 20}
+
+'''
 # fit CEBRA hybrid
 cebra_hybrid_model = CEBRA(
 	model_architecture='offset10-model',
@@ -43,11 +50,7 @@ cebra_hybrid_model = CEBRA(
 	time_offsets=10,
 	hybrid = True
 )
-'''
-Minimum validation loss: 0.09375
-Best hyperparameters found were:  {'model_architecture': 'offset1-model-mse', 'batch_size': 512, 'learning_rate': 1.7239766706958178e-05, 'temperature': 0.1870932548798307, 'max_iterations': 10000, 'distance': 'cosine', 'time_offsets': 20}
 
-'''
 cebra_hybrid_model.fit(x_[:, 0, 0, :], b_.astype(float))
 
 # projecting into latent space

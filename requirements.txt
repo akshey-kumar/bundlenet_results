@@ -1,3 +1,4 @@
 ncmcm
 cebra
 scikit-learn
+bayesian-optimization==1.4.3

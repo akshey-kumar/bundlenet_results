@@ -55,6 +55,7 @@ y0_ = model_inference(x_, model)
 save_model = False
 if save_model:
     #model.save_weights(f'data/generated/models/BunDLeNet_model_worm_{worm_num}')
+    os.mkdir('data/generated/embeddings', exist_ok=True)
     np.savetxt(f'data/generated/embeddings/y0__{algorithm}_worm_{worm_num}', y0_)
     np.savetxt(f'data/generated/embeddings/b__{algorithm}_worm_{worm_num}', b_)
     y0_ = np.loadtxt(f'data/generated/embeddings/y0__{algorithm}_worm_{worm_num}')
