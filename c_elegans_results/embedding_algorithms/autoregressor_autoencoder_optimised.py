@@ -27,9 +27,16 @@ for worm_num in range(5):
     data.exclude_neurons(b_neurons)
     x = data.neuron_traces.T
     b = data.behaviour
-
+    '''
+    Best hyperparameters found were:
+    lr: 0.00723241566576686
+    epochs: 278.41601708994205 --> 278
+    batch_size: 382.898435598805 int --> 382
+    win: 3.602536998183429 int --> 3
+    layers_idx: 0.11655297528955444 --> [50, 10],  # Shallow Architecture
+    '''
     # prepare data (This autoencoder predicts the difference between present and future state)
-    x_, b_ = prep_data(x, b, win=5)
+    x_, b_ = prep_data(x, b, win=3)
     x0_ = x_[:, 0, :, :]
     x1_ = x_[:, 1, :, :]
     xdiff_ = x1_ - x0_
@@ -51,11 +58,7 @@ for worm_num in range(5):
                 nn.Flatten(),
                 nn.Linear(in_features, 50),
                 nn.ReLU(),
-                nn.Linear(50, 30),
-                nn.ReLU(),
-                nn.Linear(30, 25),
-                nn.ReLU(),
-                nn.Linear(25, 10),
+                nn.Linear(50, 10),
                 nn.ReLU(),
                 nn.Linear(10, latent_dim)  # Linear activation (default)
             )
@@ -64,11 +67,7 @@ for worm_num in range(5):
             self.decoder = nn.Sequential(
                 nn.Linear(latent_dim, 10),
                 nn.ReLU(),
-                nn.Linear(10, 25),
-                nn.ReLU(),
-                nn.Linear(25, 30),
-                nn.ReLU(),
-                nn.Linear(30, 50),
+                nn.Linear(10, 50),
                 nn.ReLU(),
                 nn.Linear(50, in_features),
                 nn.Unflatten(1, input_shape[-2:])  # Reshape back to original shape
@@ -83,13 +82,13 @@ for worm_num in range(5):
     # fit the autoencoder to data
     latent_dim = 3
     model = Autoencoder(latent_dim=3, input_shape=x0_.shape)
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=0.00723241566576686)
     criterion = nn.MSELoss()
     x0_ = torch.tensor(x0_, dtype=torch.float32)
     xdiff_ = torch.tensor(xdiff_, dtype=torch.float32)
-    train_loader = DataLoader(TensorDataset(x0_, xdiff_), batch_size=100, shuffle=True)
+    train_loader = DataLoader(TensorDataset(x0_, xdiff_), batch_size=382, shuffle=True)
 
-    epochs = 150
+    epochs = 278
     for epoch in range(epochs):
         model.train()
         for x_batch, xdiff_batch in train_loader:

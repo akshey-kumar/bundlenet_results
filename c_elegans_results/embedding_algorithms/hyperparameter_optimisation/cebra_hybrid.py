@@ -67,7 +67,6 @@ def train_cebra_hybrid(config):
     # report result to ray tune
     tune.report({"test_acc":test_acc})
 
-############## to be done VVV
 if __name__ == "__main__":
 
     max_epochs = 500

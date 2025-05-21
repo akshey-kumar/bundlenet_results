@@ -7,47 +7,46 @@ from ncmcm.visualisers.latent_space import LatentSpaceVisualiser
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 
 # load data (excluding behavioural neurons) and plot
-worm_num = 0
-algorithm = 'lda'
-b_neurons = [
-    'AVAR',
-    'AVAL',
-    'SMDVR',
-    'SMDVL',
-    'SMDDR',
-    'SMDDL',
-    'RIBR',
-    'RIBL'
-]
-data_path = 'data/raw/c_elegans/NoStim_Data.mat'
+for worm_num in range(5):
+    algorithm = 'lda'
+    b_neurons = [
+        'AVAR',
+        'AVAL',
+        'SMDVR',
+        'SMDVL',
+        'SMDDR',
+        'SMDDL',
+        'RIBR',
+        'RIBL'
+    ]
+    data_path = 'data/raw/c_elegans/NoStim_Data.mat'
 
-data = Database(data_path=data_path, dataset_no=worm_num)
-data.exclude_neurons(b_neurons)
-x = data.neuron_traces.T
-b = data.behaviour
+    data = Database(data_path=data_path, dataset_no=worm_num)
+    data.exclude_neurons(b_neurons)
+    x = data.neuron_traces.T
+    b = data.behaviour
 
-# prepare data
-x_, b_ = prep_data(x, b, win=1)
+    # prepare data
+    x_, b_ = prep_data(x, b, win=1)
 
-# fit PCA
-dim = 3
-lda = LDA(n_components=dim)
-lda.fit(x_[:,0,0,:], b_)
+    # fit PCA
+    dim = 3
+    lda = LDA(n_components=dim)
+    lda.fit(x_[:,0,0,:], b_)
 
-# projecting into latent space
-y0_ = lda.transform(x_[:,0,0,:])
+    # projecting into latent space
+    y0_ = lda.transform(x_[:,0,0,:])
 
-# save the weights
-save_model = False
-if save_model:
-    #model.save_weights(f'data/generated/models/bunDLeNet_model_worm_{worm_num}')
-    np.savetxt(f'data/generated/embeddings/y0__{algorithm}_worm_{worm_num}', y0_)
-    np.savetxt(f'data/generated/embeddings/b__{algorithm}_worm_{worm_num}', b_)
-    y0_ = np.loadtxt(f'data/generated/embeddings/y0__{algorithm}_worm_{worm_num}')
-    b_ = np.loadtxt(f'data/generated/embeddings/b__{algorithm}_worm_{worm_num}').astype(int)
+    # save the weights
+    save_model = True
+    if save_model:
+        #model.save_weights(f'data/generated/models/bunDLeNet_model_worm_{worm_num}')
+        np.savetxt(f'data/generated/embeddings/y0__{algorithm}_worm_{worm_num}', y0_)
+        np.savetxt(f'data/generated/embeddings/b__{algorithm}_worm_{worm_num}', b_)
+        y0_ = np.loadtxt(f'data/generated/embeddings/y0__{algorithm}_worm_{worm_num}')
+        b_ = np.loadtxt(f'data/generated/embeddings/b__{algorithm}_worm_{worm_num}').astype(int)
 
-# plotting latent space dynamics
-vis = LatentSpaceVisualiser(y0_, b_, data.behaviour_names)
-vis.plot_latent_timeseries()
-vis.plot_phase_space()
-#vis.rotating_plot(filename='figures/rotation_' + algorithm + '_worm_' + str(worm_num) + '.gif')
+    # plotting latent space dynamics
+    #vis = LatentSpaceVisualiser(y0_, b_, data.behaviour_names)
+    #vis.plot_latent_timeseries()
+    #vis.plot_phase_space()
