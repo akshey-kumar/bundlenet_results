@@ -1,14 +1,8 @@
 import os
-import numpy as np
 from sklearn.metrics import mean_squared_error
 from ncmcm.data_loaders.matlab_dataset import Database
 from ncmcm.bundlenet.utils import prep_data, timeseries_train_test_split
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset
 from ray import tune
-from ray.tune.search.bayesopt import BayesOptSearch
 from cebra import CEBRA
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 import sklearn.metrics
@@ -82,7 +76,7 @@ if __name__ == "__main__":
     }
 
     # hyperparameter tuning
-    search_algo = HyperOptSearch(metric="test_acc", mode="min")
+    search_algo = HyperOptSearch(metric="test_acc", mode="max")
 
     tuner = tune.Tuner(
         tune.with_parameters(train_cebra_hybrid),
@@ -94,8 +88,8 @@ if __name__ == "__main__":
         param_space=search_space,
     )
     results = tuner.fit()
-    best_result = results.get_best_result(metric='test_acc', mode='min')
-    print("Minimum validation loss:", best_result.metrics['test_acc'])
+    best_result = results.get_best_result(metric='test_acc', mode='max')
+    print("Max test accuracy:", best_result.metrics['test_acc'])
     print("Best hyperparameters found were: ", best_result.config)
 
     # save best hyperparameters to a file
@@ -104,7 +98,7 @@ if __name__ == "__main__":
 
     best_params_path = os.path.join(results_dir, f"best_params_c_elegans_{worm_num}_{algorithm}.txt")
     with open(best_params_path, 'w') as f:
-        f.write(f"Minimum test_acc: {best_result.metrics['test_acc']}\n")
+        f.write(f"Max test_acc: {best_result.metrics['test_acc']}\n")
         f.write("Best hyperparameters found were:\n")
         for param, value in best_result.config.items():
             f.write(f"{param}: {value}\n")

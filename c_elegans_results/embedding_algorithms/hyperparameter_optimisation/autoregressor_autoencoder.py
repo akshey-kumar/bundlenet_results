@@ -132,7 +132,7 @@ if __name__ == "__main__":
     )
     results = tuner.fit()
     best_result = results.get_best_result(metric='mse', mode='min')
-    print("Minimum validation loss:", best_result.metrics['mse'])
+    print("Minimum mse:", best_result.metrics['mse'])
     print("Best hyperparameters found were: ", best_result.config)
 
     # save best hyperparameters to a file

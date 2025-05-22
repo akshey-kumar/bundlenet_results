@@ -1,9 +1,9 @@
-Minimum test_acc: 0.09375
+Max test_acc: 0.828125
 Best hyperparameters found were:
-model_architecture: offset1-model-mse
-batch_size: 512
-learning_rate: 1.7239766706958178e-05
-temperature: 0.1870932548798307
-max_iterations: 10000
+model_architecture: offset10-model
+batch_size: 256
+learning_rate: 6.553070915852317e-05
+temperature: 0.45593346212357455
+max_iterations: 5000
 distance: cosine
-time_offsets: 20
+time_offsets: 10
