@@ -78,37 +78,44 @@ for worm_num in range(5):
             decoded = self.decoder(encoded)
             return decoded
 
+    # five fits of the model and pick the best model
+    best_model = None
+    lowest_loss = float("inf")
+    for _ in range(5):
+        # fit the autoencoder to data
+        latent_dim = 3
+        model = Autoencoder(latent_dim=3, input_shape=x0_.shape)
+        optimizer = optim.Adam(model.parameters(), lr=0.00723241566576686)
+        criterion = nn.MSELoss()
+        x0_ = torch.tensor(x0_, dtype=torch.float32)
+        xdiff_ = torch.tensor(xdiff_, dtype=torch.float32)
+        train_loader = DataLoader(TensorDataset(x0_, xdiff_), batch_size=382, shuffle=True)
 
-    # fit the autoencoder to data
-    latent_dim = 3
-    model = Autoencoder(latent_dim=3, input_shape=x0_.shape)
-    optimizer = optim.Adam(model.parameters(), lr=0.00723241566576686)
-    criterion = nn.MSELoss()
-    x0_ = torch.tensor(x0_, dtype=torch.float32)
-    xdiff_ = torch.tensor(xdiff_, dtype=torch.float32)
-    train_loader = DataLoader(TensorDataset(x0_, xdiff_), batch_size=382, shuffle=True)
+        epochs = 278
+        for epoch in range(epochs):
+            model.train()
+            for x_batch, xdiff_batch in train_loader:
+                optimizer.zero_grad()
+                output = model(x_batch)
+                loss = criterion(output, xdiff_batch)
+                loss.backward()
+                optimizer.step()
 
-    epochs = 278
-    for epoch in range(epochs):
-        model.train()
-        for x_batch, xdiff_batch in train_loader:
-            optimizer.zero_grad()
-            output = model(x_batch)
-            loss = criterion(output, xdiff_batch)
-            loss.backward()
-            optimizer.step()
+        # evaluate
+        model.eval()
+        with torch.no_grad():
+            xdiff_pred = model(x0_).numpy()
+            # inverse scaling the data
+            xdiff_pred, xdiff_ = xdiff_pred * xdmax, xdiff_ * xdmax
+            x1_pred = x0_.numpy() + xdiff_pred
 
-    # evaluate
-    model.eval()
-    with torch.no_grad():
-        xdiff_pred = model(x0_).numpy()
-        # inverse scaling the data
-        xdiff_pred, xdiff_ = xdiff_pred*xdmax, xdiff_*xdmax
-        x1_pred = x0_.numpy() + xdiff_pred
+        loss = mean_squared_error(x1_.reshape(x1_.shape[0], -1), x1_pred.reshape(x1_pred.shape[0], -1))
+        print('mse:', round(loss, 8))
 
 
-    model_mse = mean_squared_error(x1_.reshape(x1_.shape[0], -1), x1_pred.reshape(x1_pred.shape[0], -1))
-    print('mse:', round(model_mse, 8))
+        if loss < lowest_loss:
+            best_model, lowest_loss = model, loss
+
 
     # project into latent space
     with torch.no_grad():
@@ -122,7 +129,3 @@ for worm_num in range(5):
         y0_ = np.loadtxt(f'data/generated/embeddings/y0__{algorithm}_worm_{worm_num}')
         b_ = np.loadtxt(f'data/generated/embeddings/b__{algorithm}_worm_{worm_num}').astype(int)
 
-    # plotting latent space dynamics
-    #vis = LatentSpaceVisualiser(y0_, b_, data.behaviour_names)
-    #vis.plot_latent_timeseries()
-    #vis.plot_phase_space()

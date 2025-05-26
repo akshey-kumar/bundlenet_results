@@ -79,37 +79,44 @@ for worm_num in range(5):
 			decoded = self.decoder(encoded)
 			return decoded
 
+	# five fits of the model and pick the best model
+	best_model = None
+	lowest_loss = float("inf")
+	for _ in range(5):
+		# fit the autoencoder to data
+		latent_dim = 3
+		model = Autoencoder(latent_dim, input_shape=x0_.shape)
+		optimizer = optim.Adam(model.parameters(), lr=0.0010628744197015334)
+		criterion = nn.MSELoss()
+		x0_ = torch.tensor(x0_, dtype=torch.float32)
+		train_loader = DataLoader(TensorDataset(x0_, x0_), batch_size=276, shuffle=True)
 
-	# fit the autoencoder to data
-	latent_dim = 3
-	model = Autoencoder(latent_dim, input_shape=x0_.shape)
-	optimizer = optim.Adam(model.parameters(), lr=0.0010628744197015334)
-	criterion = nn.MSELoss()
-	x0_ = torch.tensor(x0_, dtype=torch.float32)
-	train_loader = DataLoader(TensorDataset(x0_, x0_), batch_size=276, shuffle=True)
+		epochs = 267
+		for epoch in range(epochs):
+			model.train()
+			for batch in train_loader:
+				x_batch, _ = batch
+				optimizer.zero_grad()
+				output = model(x_batch)
+				loss = criterion(output, x_batch)
+				loss.backward()
+				optimizer.step()
 
-	epochs = 267
-	for epoch in range(epochs):
-		model.train()
-		for batch in train_loader:
-			x_batch, _ = batch
-			optimizer.zero_grad()
-			output = model(x_batch)
-			loss = criterion(output, x_batch)
-			loss.backward()
-			optimizer.step()
+		# evaluate
+		model.eval()
+		with torch.no_grad():
+			x0_pred = model(x0_).numpy()
 
-	# evaluate
-	model.eval()
-	with torch.no_grad():
-		x0_pred = model(x0_).numpy()
+		loss = mean_squared_error(x0_.view(x0_.size(0), -1).numpy(), x0_pred.reshape(x0_pred.shape[0], -1))
+		print('mse:', round(loss, 8))
 
-	modelmse = mean_squared_error(x0_.view(x0_.size(0), -1).numpy(), x0_pred.reshape(x0_pred.shape[0], -1))
-	print('mse:', round(modelmse, 8))
+		if loss < lowest_loss:
+			best_model, lowest_loss = model, loss
+
 
 	# project into latent space
 	with torch.no_grad():
-		y0_ = model.encoder(x0_).numpy()
+		y0_ = best_model.encoder(x0_).numpy()
 
 	# save the weights
 	save_model = True

@@ -31,18 +31,26 @@ for worm_num in range(5):
     '''
     # prepare data
     x_, b_ = prep_data(x, b, win=17)
-    # fit tsne
     dim = 3
-    tsne = TSNE(
-        n_components=dim,
-        init='pca',
-        early_exaggeration=12.163332530023283,
-        perplexity = 11.85014200446232,
-        max_iter=2349
-    )
 
-    # projecting into latent space
-    y0_ = tsne.fit_transform(x_[:, 0, 0, :])
+    # five fits of the model and pick the best model
+    best_model = None
+    lowest_loss = float("inf")
+    for _ in range(5):
+        tsne = TSNE(
+            n_components=dim,
+            init='pca',
+            early_exaggeration=12.163332530023283,
+            perplexity=11.85014200446232,
+            max_iter=2349
+        )
+        # projecting into latent space
+        embedding = tsne.fit_transform(x_[:, 0, 0, :])
+
+        loss = tsne.kl_divergence_
+        if loss < lowest_loss:
+            y0_, lowest_loss = embedding, loss
+
 
     # save the weights
     save_model = True
@@ -51,8 +59,3 @@ for worm_num in range(5):
         np.savetxt(f'data/generated/embeddings/b__{algorithm}_worm_{worm_num}', b_)
         y0_ = np.loadtxt(f'data/generated/embeddings/y0__{algorithm}_worm_{worm_num}')
         b_ = np.loadtxt(f'data/generated/embeddings/b__{algorithm}_worm_{worm_num}').astype(int)
-
-    # plotting latent space dynamics
-    #vis = LatentSpaceVisualiser(y0_, b_, data.behaviour_names)
-    #vis.plot_latent_timeseries()
-    #vis.plot_phase_space()
