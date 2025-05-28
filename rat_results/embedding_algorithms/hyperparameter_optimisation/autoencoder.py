@@ -11,23 +11,20 @@ from ray import tune
 from ray.tune.search.bayesopt import BayesOptSearch
 
 
-# load data
-worm_num = 0
 algorithm = 'autoencoder'
-b_neurons = ['AVAR', 'AVAL', 'SMDVR', 'SMDVL', 'SMDDR', 'SMDDL', 'RIBR', 'RIBL']
-data_path = 'data/raw/c_elegans/NoStim_Data.mat'
-data = Database(data_path=data_path, dataset_no=worm_num)
-data.exclude_neurons(b_neurons)
-x = data.neuron_traces.T
-b = data.behaviour
+rat_name = 'achilles'
+# Load data
+data = np.load(f'data/raw/rat_hippocampus/{rat_name}.npz')
+x, b = data['x'], data['b']
+x = x - np.min(x)  # cebra doesn't work otherwise if there are negative values
 
 # hyperparameter tuning function
 def train_autoencoder(config):
     # prepare data with given window size
     x_, b_ = prep_data(x, b, win=int(config["win"]))
-    x0_ = x_[:, 0, :, :]
-    x0_ = torch.tensor(x0_, dtype=torch.float32)
-    train_loader = DataLoader(TensorDataset(x0_, x0_), batch_size=int(config["batch_size"]), shuffle=True)
+    x_ = x_[:, -1, :, :]
+    x_ = torch.tensor(x_, dtype=torch.float32)
+    train_loader = DataLoader(TensorDataset(x_, x_), batch_size=int(config["batch_size"]), shuffle=True)
 
     # autoencoder architecture
     architectures = [
@@ -69,7 +66,7 @@ def train_autoencoder(config):
             return decoded
 
     # model initialization
-    model = Autoencoder(latent_dim=3, input_shape=x0_.shape, layers=layers)
+    model = Autoencoder(latent_dim=3, input_shape=x_.shape, layers=layers)
     optimizer = optim.Adam(model.parameters(), lr=config["lr"])
     criterion = nn.MSELoss()
 
@@ -87,8 +84,8 @@ def train_autoencoder(config):
     # evaluation
     model.eval()
     with torch.no_grad():
-        x0_pred = model(x0_).numpy()
-    model_mse = mean_squared_error(x0_.view(x0_.size(0), -1).numpy(), x0_pred.reshape(x0_pred.shape[0], -1))
+        x_pred = model(x_).numpy()
+    model_mse = mean_squared_error(x_.numpy().reshape(x_.shape[0], -1), x_pred.reshape(x_pred.shape[0], -1))
 
     # report result to ray tune
     tune.report({"mse":model_mse})
@@ -96,7 +93,7 @@ def train_autoencoder(config):
 
 if __name__ == "__main__":
 
-    max_epochs = 500
+    max_epochs = 1000
     # Hyperparameter search space
     search_space = {
         "lr": tune.loguniform(1e-4, 1e-1),
@@ -127,10 +124,9 @@ if __name__ == "__main__":
     results_dir = 'data/generated/optimal_hyperparameters/'
     os.makedirs(results_dir, exist_ok=True)
 
-    best_params_path = os.path.join(results_dir, f"best_params_c_elegans_{worm_num}_{algorithm}.txt")
+    best_params_path = os.path.join(results_dir, f"best_params_rat_{rat_name}_{algorithm}.txt")
     with open(best_params_path, 'w') as f:
         f.write(f"Minimum mse: {best_result.metrics['mse']}\n")
         f.write("Best hyperparameters found were:\n")
         for param, value in best_result.config.items():
             f.write(f"{param}: {value}\n")
-

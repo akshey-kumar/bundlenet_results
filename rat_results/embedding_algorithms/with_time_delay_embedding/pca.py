@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 from ncmcm.bundlenet.utils import prep_data
 
-algorithm = 'pca'
+algorithm = 'pca_tde'
 for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
     # Load data
     data = np.load(f'data/raw/rat_hippocampus/{rat_name}.npz')
@@ -10,7 +10,7 @@ for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
     x = x - np.min(x)  # cebra doesn't work otherwise if there are negative values
 
     # time delay embedding
-    x_, b_ = prep_data(x, b, win=1)
+    x_, b_ = prep_data(x, b, win=20)
     x_ = x_[:, -1, :, :].reshape(x_.shape[0], -1)
 
     # fit PCA

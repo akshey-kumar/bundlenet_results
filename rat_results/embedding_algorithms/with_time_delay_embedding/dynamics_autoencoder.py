@@ -1,50 +1,28 @@
 import numpy as np
 from sklearn.metrics import mean_squared_error
-from ncmcm.data_loaders.matlab_dataset import Database
 from ncmcm.bundlenet.utils import prep_data
-from ncmcm.visualisers.latent_space import LatentSpaceVisualiser
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 
 
-# load data (excluding behavioural neurons) and plot
-for worm_num in range(5):
-    algorithm = 'autoregressor_autoencoder_optimised'
-    b_neurons = [
-        'AVAR',
-        'AVAL',
-        'SMDVR',
-        'SMDVL',
-        'SMDDR',
-        'SMDDL',
-        'RIBR',
-        'RIBL'
-    ]
-    data_path = 'data/raw/c_elegans/NoStim_Data.mat'
-    data = Database(data_path=data_path, dataset_no=worm_num)
-    data.exclude_neurons(b_neurons)
-    x = data.neuron_traces.T
-    b = data.behaviour
-    '''
-    Best hyperparameters found were:
-    lr: 0.00723241566576686
-    epochs: 278.41601708994205 --> 278
-    batch_size: 382.898435598805 int --> 382
-    win: 3.602536998183429 int --> 3
-    layers_idx: 0.11655297528955444 --> [50, 10],  # Shallow Architecture
-    '''
-    # prepare data (This autoencoder predicts the difference between present and future state)
-    x_, b_ = prep_data(x, b, win=3)
+algorithm = 'dynamics_autoencoder'
+for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
+    # Load data
+    data = np.load(f'data/raw/rat_hippocampus/{rat_name}.npz')
+    x, b = data['x'], data['b']
+    x = x - np.min(x)  # cebra doesn't work otherwise if there are negative values
+
+    # time delay embedding
+    x_, b_ = prep_data(x, b, win=1)
     x0_ = x_[:, 0, :, :]
     x1_ = x_[:, 1, :, :]
     xdiff_ = x1_ - x0_
 
     # scaling input and output data
-    xdmax = (np.abs(xdiff_)).max() # Parameters for scaling
-    xdiff_ = xdiff_/xdmax
-
+    xdmax = (np.abs(xdiff_)).max()  # Parameters for scaling
+    xdiff_ = xdiff_ / xdmax
 
     # autoencoder architecture
     class Autoencoder(nn.Module):
@@ -56,7 +34,11 @@ for worm_num in range(5):
             # Encoder
             self.encoder = nn.Sequential(
                 nn.Flatten(),
-                nn.Linear(in_features, 50),
+                nn.Linear(in_features, 100),
+                nn.ReLU(),
+                nn.Linear(100, 150),
+                nn.ReLU(),
+                nn.Linear(150, 50),
                 nn.ReLU(),
                 nn.Linear(50, 10),
                 nn.ReLU(),
@@ -69,7 +51,12 @@ for worm_num in range(5):
                 nn.ReLU(),
                 nn.Linear(10, 50),
                 nn.ReLU(),
-                nn.Linear(50, in_features),
+                nn.Linear(50, 150),
+                nn.ReLU(),
+                nn.Linear(150, 100),
+                nn.ReLU(),
+                nn.Linear(100, in_features),
+                nn.Linear(in_features, in_features),  # Linear activation (default)
                 nn.Unflatten(1, input_shape[-2:])  # Reshape back to original shape
             )
 
@@ -112,20 +99,18 @@ for worm_num in range(5):
         loss = mean_squared_error(x1_.reshape(x1_.shape[0], -1), x1_pred.reshape(x1_pred.shape[0], -1))
         print('mse:', round(loss, 8))
 
-
         if loss < lowest_loss:
             best_model, lowest_loss = model, loss
 
 
     # project into latent space
     with torch.no_grad():
-        y0_ = model.encoder(x0_).numpy()
+        y_ = model.encoder(x0_).numpy()
 
     # save the weights
     save_model = True
     if save_model:
-        np.savetxt(f'data/generated/embeddings/y0__{algorithm}_worm_{worm_num}', y0_)
-        np.savetxt(f'data/generated/embeddings/b__{algorithm}_worm_{worm_num}', b_)
-        y0_ = np.loadtxt(f'data/generated/embeddings/y0__{algorithm}_worm_{worm_num}')
-        b_ = np.loadtxt(f'data/generated/embeddings/b__{algorithm}_worm_{worm_num}').astype(int)
-
+        np.savetxt(f'data/generated/embeddings/rat/y0__{algorithm}_rat_{rat_name}', y_)
+        np.savetxt(f'data/generated/embeddings/rat/b__{algorithm}_rat_{rat_name}', b_)
+        y_ = np.loadtxt(f'data/generated/embeddings/rat/y0__{algorithm}_rat_{rat_name}')
+        b_ = np.loadtxt(f'data/generated/embeddings/rat/b__{algorithm}_rat_{rat_name}').astype(int)

@@ -42,7 +42,7 @@ class ReducedRankRegressor(object):
         return np.asarray(np.dot(X, np.dot(self.A.T, self.W.T)))
 
 
-algorithm = 'rrr'
+algorithm = 'rrr_tde'
 
 for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
     # Load data
@@ -50,7 +50,7 @@ for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
     x, b = data['x'], data['b']
     x = x - np.min(x)  # cebra doesn't work otherwise if there are negative values
     np.where(x < 0)
-    x_, b_ = prep_data(x, b, win=1)
+    x_, b_ = prep_data(x, b, win=20)
     x_ = x_[:, -1, :, :].reshape(x_.shape[0], -1)
 
     ### Deploy RRR

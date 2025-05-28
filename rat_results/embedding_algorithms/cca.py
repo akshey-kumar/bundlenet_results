@@ -2,22 +2,22 @@ import numpy as np
 from sklearn.cross_decomposition import CCA
 from ncmcm.bundlenet.utils import prep_data
 
-algorithm = 'pca'
+algorithm = 'cca'
 for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
     # Load data
     data = np.load(f'data/raw/rat_hippocampus/{rat_name}.npz')
     x, b = data['x'], data['b']
     x = x - np.min(x)  # cebra doesn't work otherwise if there are negative values
-    x_, b_ = prep_data(x, b, win=20)
 
     # time delay embedding
-    x_ = x_[:,1,:,:].reshape(x_.shape[0], -1)
+    x_, b_ = prep_data(x, b, win=1)
+    x_ = x_[:,-1,:,:].reshape(x_.shape[0], -1)
 
     # fit CCA
     dim = 3
     cca = CCA(n_components=dim)
-    cca.fit(x_)
-    print('Accuracy of CCA on data', cca.score(x_))
+    cca.fit(x_, b_)
+    print('Accuracy of CCA on data', cca.score(x_, b_))
 
     # projecting into latent space
     y_ = cca.transform(x_)

@@ -1,14 +1,15 @@
 #!/bin/bash
 
-# Run the scripts to produce embeddings and save them in data/generated/embeddings
+# Run the scripts to produce embeddings and save them in data/generated/embeddings/rat_results
 set -e
 
-for algorithm in 'autoencoder_optimised' 'autoregressor_autoencoder_optimised' 'tsne_optimised' # 'autoencoder_optimised' 'autoregressor_autoencoder_optimised' 'tsne_optimised' 'cebra_hybrid_optimised'
+for algorithm in 'pca' 'cca' 'rrr'
 do
-  python3 c_elegans_results/embedding_algorithms/${algorithm}.py
+  python3 rat_results/embedding_algorithms/${algorithm}.py
 done
 
-# for algorithm in  'tsne' 'bundlenet' #  'pca' 'lda'  'autoencoder' 'autoregressor_autoencoder' 'cebra_hybrid' 'autoencoder' 'autoregressor_autoencoder' 'cebra_hybrid'
-# do
-#   python3 c_elegans_results/embedding_algorithms/${algorithm}.py
-# done
+# Scripts with time delay embeddings
+for algorithm in  'pca' 'cca' 'rrr' 'bundlenet'  'cebra_hybrid' #  'autoencoder' 'dynamics_autoencoder'
+do
+  python3 rat_results/embedding_algorithms/with_time_delay_embedding/${algorithm}.py
+done

@@ -11,17 +11,15 @@ from ray import tune
 from ray.tune.search.bayesopt import BayesOptSearch
 
 # load data
-worm_num = 0
-algorithm = 'autoregressor_autoencoder'
-b_neurons = ['AVAR', 'AVAL', 'SMDVR', 'SMDVL', 'SMDDR', 'SMDDL', 'RIBR', 'RIBL']
-data_path = 'data/raw/c_elegans/NoStim_Data.mat'
-data = Database(data_path=data_path, dataset_no=worm_num)
-data.exclude_neurons(b_neurons)
-x = data.neuron_traces.T
-b = data.behaviour
+algorithm = 'dynamics_autoencoder'
+rat_name = 'achilles'
+# Load data
+data = np.load(f'data/raw/rat_hippocampus/{rat_name}.npz')
+x, b = data['x'], data['b']
+x = x - np.min(x)  # cebra doesn't work otherwise if there are negative values
 
 # hyperparameter tuning function
-def train_autoregressor_autoencoder(config):
+def train_dynamics_autoencoder(config):
 
     # prepare data with given window size (This autoencoder predicts the difference between present and future state)
     x_, b_ = prep_data(x, b, win=int(config["win"]))
@@ -108,7 +106,7 @@ def train_autoregressor_autoencoder(config):
 
 if __name__ == "__main__":
 
-    max_epochs = 500
+    max_epochs = 1000
     # Hyperparameter search space
     search_space = {
         "lr": tune.loguniform(1e-4, 1e-1),
@@ -122,7 +120,7 @@ if __name__ == "__main__":
     search_algo = BayesOptSearch(metric="mse", mode="min")
 
     tuner = tune.Tuner(
-        tune.with_parameters(train_autoregressor_autoencoder),
+        tune.with_parameters(train_dynamics_autoencoder),
         tune_config=tune.TuneConfig(
             search_alg=search_algo,
             num_samples=200,
@@ -139,7 +137,7 @@ if __name__ == "__main__":
     results_dir = 'data/generated/optimal_hyperparameters/'
     os.makedirs(results_dir, exist_ok=True)
 
-    best_params_path = os.path.join(results_dir, f"best_params_c_elegans_{worm_num}_{algorithm}.txt")
+    best_params_path = os.path.join(results_dir, f"best_params_rat_{rat_name}_{algorithm}.txt")
     with open(best_params_path, 'w') as f:
         f.write(f"Minimum mse: {best_result.metrics['mse']}\n")
         f.write("Best hyperparameters found were:\n")
