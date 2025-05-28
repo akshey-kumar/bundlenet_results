@@ -119,7 +119,7 @@ for worm_num in range(5):
 
     # project into latent space
     with torch.no_grad():
-        y0_ = model.encoder(x0_).numpy()
+        y0_ = best_model.encoder(x0_).numpy()
 
     # save the weights
     save_model = True
