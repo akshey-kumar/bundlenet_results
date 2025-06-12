@@ -1,13 +1,17 @@
+
+import torch
+import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 from ncmcm.data_loaders.matlab_dataset import Database
 from ncmcm.bundlenet.bundlenet import BunDLeNet, train_model, project_into_latent_space
-from ncmcm.bundlenet.utils import prep_data
+from ncmcm.bundlenet.utils import prep_data, timeseries_train_test_split, GaussianNoise
 from ncmcm.visualisers.latent_space import LatentSpaceVisualiser
+
 
 # load Data (excluding behavioural neurons) and plot
 for worm_num in range(5):
-    algorithm = 'bundlenet'
+    algorithm = 'bundlenet_linear'
     b_neurons = [
         'AVAR',
         'AVAL',
@@ -28,8 +32,16 @@ for worm_num in range(5):
     x_, b_ = prep_data(x, b, win=1)
     x_train, x_test, b_train, b_test = timeseries_train_test_split(x_, b_)
 
-    # deploy BunDLe Net
-    model = BunDLeNet(latent_dim=3, num_behaviour=len(data.behaviour_names), input_shape=x_.shape)
+    # deploy lienar BunDLeNet
+    latent_dim = 3
+    model = BunDLeNet(latent_dim=latent_dim, num_behaviour=len(data.behaviour_names), input_shape=x_.shape)
+    model.tau = nn.Sequential(
+        nn.Flatten(),
+        nn.Linear(np.prod(x_.shape[-2:]), latent_dim),
+        nn.BatchNorm1d(latent_dim),
+        GaussianNoise(0.05),
+    )
+
     loss_array, _ = train_model(
         x_train,
         b_train,
@@ -48,27 +60,24 @@ for worm_num in range(5):
     ]):
         plt.plot(loss_array[:, i], label=label)
     plt.legend()
-    # plt.show()
 
     # projecting into latent space
-    y0_tr = project_into_latent_space(x_train[:, 0]).numpy()
-    y1_tr = project_into_latent_space(x_train[:, 1]).numpy()
-    y0_tst = project_into_latent_space(x_test[:, 0]).numpy()
-    y1_tst = project_into_latent_space(x_test[:, 1]).numpy()
+    y0_tr = project_into_latent_space(x_train[:, 0], model)
+    y1_tr = project_into_latent_space(x_train[:, 1], model)
+    y0_tst = project_into_latent_space(x_test[:, 0], model)
+    y1_tst = project_into_latent_space(x_test[:, 1], model)
 
-    # save the weights
+    # saving
     save_model = True
     if save_model:
-        np.savetxt(f'data/generated/embeddings/c_elegans/y0__{algorithm}_worm_{worm_num}', y0_)
-        np.savetxt(f'data/generated/embeddings/c_elegans/b__{algorithm}_worm_{worm_num}', b_)
-        y0_ = np.loadtxt(f'data/generated/embeddings/c_elegans/y0__{algorithm}_worm_{worm_num}')
-        b_ = np.loadtxt(f'data/generated/embeddings/c_elegans/b__{algorithm}_worm_{worm_num}').astype(int)
+        np.savetxt(f'data/generated/quantitative_evaluation/embeddings/c_elegans/y0_tr__{algorithm}_worm_{worm_num}', y0_tr)
+        np.savetxt(f'data/generated/quantitative_evaluation/embeddings/c_elegans/y1_tr__{algorithm}_worm_{worm_num}', y1_tr)
+        np.savetxt(f'data/generated/quantitative_evaluation/embeddings/c_elegans/y0_tst__{algorithm}_worm_{worm_num}', y0_tst)
+        np.savetxt(f'data/generated/quantitative_evaluation/embeddings/c_elegans/y1_tst__{algorithm}_worm_{worm_num}', y1_tst)
+        np.savetxt(f'data/generated/quantitative_evaluation/embeddings/c_elegans/b_tr__{algorithm}_worm_{worm_num}', b_train)
+        np.savetxt(f'data/generated/quantitative_evaluation/embeddings/c_elegans/b_tst__{algorithm}_worm_{worm_num}', b_test)
 
     # plotting latent space dynamics
     #vis = LatentSpaceVisualiser(y0_, b_, data.behaviour_names)
     #vis.plot_latent_timeseries()
     #vis.plot_phase_space()
-
-
-
-
