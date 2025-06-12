@@ -41,11 +41,10 @@ for worm_num in range(5):
     # save the weights
     save_model = True
     if save_model:
-        #model.save_weights(f'data/generated/models/bunDLeNet_model_worm_{worm_num}')
-        np.savetxt(f'data/generated/embeddings/y0__{algorithm}_worm_{worm_num}', y_)
-        np.savetxt(f'data/generated/embeddings/b__{algorithm}_worm_{worm_num}', b_)
-        y_ = np.loadtxt(f'data/generated/embeddings/y0__{algorithm}_worm_{worm_num}')
-        b_ = np.loadtxt(f'data/generated/embeddings/b__{algorithm}_worm_{worm_num}').astype(int)
+        np.savetxt(f'data/generated/embeddings/c_elegans/y0__{algorithm}_worm_{worm_num}', y_)
+        np.savetxt(f'data/generated/embeddings/c_elegans/b__{algorithm}_worm_{worm_num}', b_)
+        y_ = np.loadtxt(f'data/generated/embeddings/c_elegans/y0__{algorithm}_worm_{worm_num}')
+        b_ = np.loadtxt(f'data/generated/embeddings/c_elegans/b__{algorithm}_worm_{worm_num}').astype(int)
 
     # plotting latent space dynamics
     # vis = LatentSpaceVisualiser(y_, b_, data.behaviour_names)

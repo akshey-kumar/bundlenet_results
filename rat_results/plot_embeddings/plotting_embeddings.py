@@ -4,26 +4,30 @@ import seaborn as sns
 from ncmcm.visualisers.latent_space import LatentSpaceVisualiser
 
 
-worm_num = 0
-b_names = ['Dorsal turn', 'Forward', 'No state', 'Reverse-1', 'Reverse-2', 'Sustained reversal', 'Slowing', 'Ventral turn']
-b_names = {idx:name for idx, name in enumerate(b_names)}
-for algorithm in ['bundlenet', 'lda', 'pca','tsne_optimised', 'autoencoder_optimised', 'autoregressor_autoencoder_optimised', 'cebra_hybrid_optimised']:
-    # Plotting
-    y0_ = np.loadtxt(f'data/generated/embeddings/y0__{algorithm}_worm_{worm_num}')
-    b_ = np.loadtxt(f'data/generated/embeddings/b__{algorithm}_worm_{worm_num}').astype(int)
-    print(algorithm)
-    deep_palette = sns.color_palette('deep', 8)
-    colors = [deep_palette[i] for i in [4, 2, 7, 5, 1, 3, 0, 6]]
+algorithm = 'bundlenet'
+for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
+    # Load data
+    data = np.load(f'data/raw/rat_hippocampus/{rat_name}.npz')
 
-    # Plotting latent space dynamics
+    y0_ = np.loadtxt(f'data/generated/embeddings/rat/y0__{algorithm}_rat_{rat_name}')
+    b_ = np.loadtxt(f'data/generated/embeddings/rat/b__{algorithm}_rat_{rat_name}')
+
+    # Continuous variable plotting
+    fig = plt.figure(figsize=(4, 4))
+    ax = plt.axes(projection='3d')
+    ax.axis('off')
+    pts = ax.scatter(y0_[:, 0], y0_[:, 1], y0_[:, 2], c=b_[:, 0], s=0.5)
+    plt.colorbar(pts)
+
+    # Discrete variable plotting
     vis = LatentSpaceVisualiser(
-        y0_,
-        b_,
-        b_names,
-        colors=colors,
-        show_points=True
+        y=y0_,
+        b=b_[:, 1].astype(int),
+        b_names=['0', '1']
     )
-    #vis.plot_latent_timeseries()
-    vis.plot_phase_space()
-    # vis.rotating_plot(filename=f'figures/rotation_{algorithm}_worm_{worm_num}.gif')
+    vis.plot_phase_space(
+       show_fig=False,
+       arrow_length_ratio=0.00001,
+    )
 
+    plt.show()

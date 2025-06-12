@@ -39,7 +39,7 @@ for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
     # plt.show()
 
     # projecting into latent space
-    y_ = project_into_latent_space(x_, model)
+    y_ = project_into_latent_space(x_[:,0], model)
 
     # save the weights
     save_model = True

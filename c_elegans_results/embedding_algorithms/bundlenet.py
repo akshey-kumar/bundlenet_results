@@ -36,7 +36,7 @@ for worm_num in range(5):
         b_type='discrete',
         gamma=0.9,
         learning_rate=0.001,
-        n_epochs=1000,
+        n_epochs=1500,
         initialisation='best_of_5_init',
     )
 
@@ -50,15 +50,15 @@ for worm_num in range(5):
     # plt.show()
 
     # projecting into latent space
-    y0_ = project_into_latent_space(x_, model)
+    y0_ = project_into_latent_space(x_[:,0], model)
 
     # save the weights
     save_model = True
     if save_model:
-        np.savetxt(f'data/generated/embeddings/y0__{algorithm}_worm_{worm_num}', y0_)
-        np.savetxt(f'data/generated/embeddings/b__{algorithm}_worm_{worm_num}', b_)
-        y0_ = np.loadtxt(f'data/generated/embeddings/y0__{algorithm}_worm_{worm_num}')
-        b_ = np.loadtxt(f'data/generated/embeddings/b__{algorithm}_worm_{worm_num}').astype(int)
+        np.savetxt(f'data/generated/embeddings/c_elegans/y0__{algorithm}_worm_{worm_num}', y0_)
+        np.savetxt(f'data/generated/embeddings/c_elegans/b__{algorithm}_worm_{worm_num}', b_)
+        y0_ = np.loadtxt(f'data/generated/embeddings/c_elegans/y0__{algorithm}_worm_{worm_num}')
+        b_ = np.loadtxt(f'data/generated/embeddings/c_elegans/b__{algorithm}_worm_{worm_num}').astype(int)
 
     # plotting latent space dynamics
     #vis = LatentSpaceVisualiser(y0_, b_, data.behaviour_names)
