@@ -52,7 +52,7 @@ class RnnAutoencoder(nn.Module):
 
 
 # Training and evaluation
-for worm_num in range(5):
+for worm_num in range(1,5):
     print(worm_num)
     algorithm = 'rnn_autoencoder'
     b_neurons = ['AVAR', 'AVAL', 'SMDVR', 'SMDVL', 'SMDDR', 'SMDDL', 'RIBR', 'RIBL']
@@ -70,16 +70,18 @@ for worm_num in range(5):
     best_model = None
     lowest_loss = float("inf")
     for _ in range(5):
-        model = RnnAutoencoder(input_dim=x0_.shape[2], hidden_dim=config['hidden_dim'] ,latent_dim=3)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print('Using device:', device)
+        model = RnnAutoencoder(input_dim=x0_.shape[2], hidden_dim=config['hidden_dim'] ,latent_dim=3).to(device)
         optimizer = optim.Adam(model.parameters(), lr=config['lr'])
         criterion = nn.MSELoss()
-        x0_tensor = torch.tensor(x0_, dtype=torch.float32)
+        x0_tensor = torch.tensor(x0_, dtype=torch.float32).to(device)
         train_loader = DataLoader(TensorDataset(x0_tensor), batch_size=config['batch_size'], shuffle=True)
         epochs = config['epochs']
         for epoch in range(epochs):
             model.train()
             for batch in train_loader:
-                x_batch = batch[0]
+                x_batch = batch[0].to(device)
                 optimizer.zero_grad()
                 reconstructed, _ = model(x_batch)
                 loss = criterion(reconstructed, x_batch)
@@ -89,17 +91,24 @@ for worm_num in range(5):
         model.eval()
         with torch.no_grad():
             reconstructed, _ = model(x0_tensor)
-            print(reconstructed.size())
-            loss = mean_squared_error(x0_tensor.view(x0_tensor.size(0), -1).numpy(), reconstructed.view(reconstructed.size(0), -1).numpy())
+            loss = mean_squared_error(
+                x0_tensor.view(x0_tensor.size(0), -1).cpu().numpy(),
+                reconstructed.view(reconstructed.size(0), -1).cpu().numpy()
+            )
             print('mse:', round(loss, 8))
 
         if loss < lowest_loss:
             best_model, lowest_loss = model, loss
 
+    # project into latent space
     with torch.no_grad():
-        y0_, _ = best_model(x0_tensor)
-        y0_ = y0_.numpy()[:,-1,:]
-        print(y0_.shape)
+        _, y0_ = best_model(x0_tensor)
+        y0_ = y0_.cpu().numpy()
+
+    # plotting latent space dynamics
+    # vis = LatentSpaceVisualiser(y0_, b_, data.behaviour_names)
+    # vis.plot_latent_timeseries()
+    # vis.plot_phase_space()
 
     save_model = True
     if save_model:

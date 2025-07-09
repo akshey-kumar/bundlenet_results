@@ -1,24 +1,47 @@
-import sys
-sys.path.append(r'../')
 import numpy as np
-from functions import *
+import matplotlib.pyplot as plt
+import seaborn as sns
+from ncmcm.visualisers.latent_space import LatentSpaceVisualiser
+import sys
 
 algorithm = sys.argv[1]
 worm_num = sys.argv[2]
 state_names = ['Dorsal turn', 'Forward', 'No state', 'Reverse-1', 'Reverse-2', 'Sustained reversal', 'Slowing', 'Ventral turn']
-# Plotting
 
-Y0_tr = np.loadtxt('data/generated/saved_Y/Y0_tr__'+algorithm+'_worm_'+ str(worm_num))
-Y1_tr = np.loadtxt('data/generated/saved_Y/Y1_tr__'+algorithm+'_worm_'+ str(worm_num))
-Y0_tst = np.loadtxt('data/generated/saved_Y/Y0_tst__'+algorithm+'_worm_'+ str(worm_num))
-Y1_tst = np.loadtxt('data/generated/saved_Y/Y1_tst__'+algorithm+'_worm_'+ str(worm_num))
-B_train_1 = np.loadtxt('data/generated/saved_Y/B_train_1__'+algorithm+'_worm_'+ str(worm_num)).astype(int)
-B_test_1 = np.loadtxt('data/generated/saved_Y/B_test_1__'+algorithm+'_worm_'+ str(worm_num)).astype(int)
+file_pattern = f'data/generated/quantitative_evaluation/embeddings/c_elegans/{{}}__{algorithm}_worm_{worm_num}'
+y0_tr = np.loadtxt(file_pattern.format('y0_tr'))
+y1_tr = np.loadtxt(file_pattern.format('y1_tr'))
+y0_tst = np.loadtxt(file_pattern.format('y0_tst'))
+y1_tst = np.loadtxt(file_pattern.format('y1_tst'))
+b_tr = np.loadtxt(file_pattern.format('b_tr')).astype(int)
+b_tst = np.loadtxt(file_pattern.format('b_tst')).astype(int)
+
+# Discrete variable plotting
+deep_palette = sns.color_palette('deep', 8)
+colors = [deep_palette[i] for i in [4, 2, 7, 5, 1, 3, 0, 6]]
 
 
-fig = plt.figure(figsize=(8,8))
+
+fig = plt.figure(figsize=(8, 8))
 ax = plt.axes(projection='3d')
-plot_ps_(fig, ax, Y=Y0_tr, B=B_train_1, state_names=state_names, show_points=False)
-plot_ps_(fig, ax, Y=Y0_tst, B=B_test_1, state_names=state_names, show_points=True)
 
+vis = LatentSpaceVisualiser(
+    y=y0_tr,
+    b=b_tr,
+    b_names=state_names,
+    colors=colors,
+)
+fig, ax = vis._plot_ps(fig, ax, arrow_length_ratio=0.001, alpha=0.5)
+
+# vis = LatentSpaceVisualiser(
+#     y=y0_tst,
+#     b=b_tst,
+#     b_names=state_names,
+#     colors=colors,
+#     show_points=False
+# )
+# fig, ax = vis._plot_ps(fig, ax, arrow_length_ratio=0.0001)
+
+ax.scatter(y0_tst[:, 0], y0_tst[:, 1], y0_tst[:, 2], c=[colors[i] for i in b_tst], s=10)
 plt.show()
+

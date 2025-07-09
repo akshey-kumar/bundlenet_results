@@ -8,7 +8,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 
 # load Data (excluding behavioural neurons) and plot
 for worm_num in range(5):
-    algorithm = 'pca'
+    algorithm = 'lda'
     b_neurons = [
         'AVAR',
         'AVAL',

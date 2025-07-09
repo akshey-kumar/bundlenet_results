@@ -1,3 +1,4 @@
+import sys
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -5,63 +6,122 @@ from sklearn import metrics
 from tqdm import tqdm
 import numpy as np
 import os
+from torch.utils.data import TensorDataset, DataLoader
+import matplotlib.pyplot as plt
 
 algorithm = sys.argv[1]
 worm_num = int(sys.argv[2])
 print(algorithm, ' worm_num: ', worm_num)
-
-file_pattern = f'data/generated/saved_Y/{{}}__{algorithm}_worm_{worm_num}'
-y0_tr = np.loadtxt(file_pattern.format('y0_tr'))
+file_pattern = f'data/generated/quantitative_evaluation/embeddings/c_elegans/{{}}__{algorithm}_worm_{worm_num}'
 y1_tr = np.loadtxt(file_pattern.format('y1_tr'))
-y0_tst = np.loadtxt(file_pattern.format('y0_tst'))
 y1_tst = np.loadtxt(file_pattern.format('y1_tst'))
 b_tr = np.loadtxt(file_pattern.format('b_tr'))
 b_tst = np.loadtxt(file_pattern.format('b_tst'))
 
-y0_tr = y0_tr.reshape(y0_tr.shape[0],-1)
+'''
+file_pattern = f'data/generated/old_saved_Y/{{}}__{algorithm}_worm_{worm_num}'
+y1_tr = np.loadtxt(file_pattern.format('Y1_tr'))
+y1_tst = np.loadtxt(file_pattern.format('Y1_tst'))
+b_tr = np.loadtxt(file_pattern.format('B_train_1'))
+b_tst = np.loadtxt(file_pattern.format('B_test_1'))
+'''
+
 y1_tr = y1_tr.reshape(y1_tr.shape[0],-1)
-y0_tst = y0_tst.reshape(y0_tst.shape[0],-1)
 y1_tst = y1_tst.reshape(y1_tst.shape[0],-1)
-ydiff_tr = y1_tr - y0_tr
-ydiff_tst = y1_tst - y0_tst
 
-## behaviour decodability evaluation
+# Convert data to PyTorch tensors
+y1_tr = torch.tensor(y1_tr, dtype=torch.float32)
+y1_tst = torch.tensor(y1_tst, dtype=torch.float32)
+b_tr = torch.tensor(b_tr, dtype=torch.long)
+b_tst = torch.tensor(b_tst, dtype=torch.long)
 
-# behavior predictor model
-class BehaviorPredictor(nn.Module):
-    def __init__(self):
-        super(BehaviorPredictor, self).__init__()
-        self.model = nn.Sequential(
-            nn.Linear(y1_tr.shape[1], 8)  # Input size matches y1_tr's feature dimension
-        )
+# Set up dataloader
+batch_size = 100
+train_ds = TensorDataset(y1_tr, b_tr)
+train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 
-    def forward(self, x):
-        return self.model(x)
-
-
-# training and evaluation
 acc_list = []
 for _ in tqdm(range(10)):
-    b_predictor = BehaviorPredictor()
+    # linear feedforward classifier
+    model = nn.Sequential(nn.Linear(y1_tr.shape[1], 8))  # no activation (logits)
+
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(b_predictor.parameters(), lr=0.01)
+    optimizer = optim.Adam(model.parameters(), lr=0.01)
 
     # training loop
+    model.train()
     for epoch in range(100):
-        b_predictor.train()
-        optimizer.zero_grad()
-        outputs = b_predictor(y1_tr)
-        loss = criterion(outputs, b_tr)
-        loss.backward()
-        optimizer.step()
+        for x_batch, y_batch in train_loader:
+            optimizer.zero_grad()
+            logits = model(x_batch)
+            loss = criterion(logits, y_batch)
+            loss.backward()
+            optimizer.step()
 
-    # evaluation
-    b_predictor.eval()
+    # evaluate on test set
+    model.eval()
     with torch.no_grad():
-        b1_tst_pred = b_predictor(y1_tst).argmax(dim=1).numpy()
-        acc_list.append(metrics.accuracy_score(b1_tst_pred, b_tst.numpy()))
+        logits = model(y1_tst)
+        preds = logits.argmax(dim=1).cpu().numpy()
+        acc = metrics.accuracy_score(b_tst.cpu().numpy(), preds)
+        acc_list.append(acc)
+
+# Print average accuracy
+print(f"Average test accuracy over 10 runs: {np.mean(acc_list):.4f}")
 
 # save metrics
 acc_list = np.array(acc_list)
-os.makedirs('data/generated/c_elegans_evaluation_metrics', exist_ok=True)
-np.savetxt(f'data/generated/c_elegans_evaluation_metrics/acc_list_{algorithm}_worm_{worm_num}', acc_list)
+os.makedirs('data/generated/quantitative_evaluation/evaluation_metrics/c_elegans', exist_ok=True)
+np.savetxt(f'data/generated/quantitative_evaluation/evaluation_metrics/c_elegans/acc_list_{algorithm}_worm_{worm_num}', acc_list)
+
+'''
+# Plot loss curves vs epochs
+
+train_losses = []
+test_losses = []
+model = nn.Sequential(nn.Linear(y1_tr.shape[1], 8))  # no activation (logits)
+
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.01)
+
+# training loop
+model.train()
+for epoch in range(100):
+    epoch_train_loss = 0
+    for x_batch, y_batch in train_loader:
+        optimizer.zero_grad()
+        logits = model(x_batch)
+        loss = criterion(logits, y_batch)
+        loss.backward()
+        optimizer.step()
+        epoch_train_loss += loss.item()
+    train_losses.append(epoch_train_loss / len(train_loader))
+
+    # Evaluate on test set
+    model.eval()
+    with torch.no_grad():
+        test_logits = model(y1_tst)
+        test_loss = criterion(test_logits, b_tst).item()
+        test_losses.append(test_loss)
+
+
+# evaluate on test set
+model.eval()
+with torch.no_grad():
+    logits = model(y1_tst)
+    preds = logits.argmax(dim=1).cpu().numpy()
+    acc = metrics.accuracy_score(b_tst.cpu().numpy(), preds)
+    print('test_acc', acc)
+
+# Plot train and test loss over epochs
+plt.figure(figsize=(10, 6))
+plt.plot(range(1, 101), train_losses, label='Train Loss')
+plt.plot(range(1, 101), test_losses, label='Test Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.title('Train and Test Loss Over Epochs')
+plt.legend()
+plt.grid()
+plt.show()
+'''
+

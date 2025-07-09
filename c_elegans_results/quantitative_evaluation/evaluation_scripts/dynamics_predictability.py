@@ -11,7 +11,7 @@ algorithm = sys.argv[1]
 worm_num = int(sys.argv[2])
 print(algorithm, ' worm_num: ', worm_num)
 
-file_pattern = f'data/generated/saved_Y/{{}}__{algorithm}_worm_{worm_num}'
+file_pattern = f'data/generated/quantitative_evaluation/embeddings/c_elegans/{{}}__{algorithm}_worm_{worm_num}'
 y0_tr = np.loadtxt(file_pattern.format('y0_tr'))
 y1_tr = np.loadtxt(file_pattern.format('y1_tr'))
 y0_tst = np.loadtxt(file_pattern.format('y0_tst'))
@@ -73,25 +73,40 @@ for i in tqdm(range(10)):
     y1_tr_pred = y0_tr + ydiff_tr_pred
     y1_tst_pred = y0_tst + ydiff_tst_pred
 
-    # evaluation
-    flat_partial = lambda x: x.reshape(x.shape[0], -1)
-    mse_baseline_tr = metrics.mean_squared_error(flat_partial(y1_tr), flat_partial(y0_tr))
-    mse_model_tr = metrics.mean_squared_error(flat_partial(y1_tr), flat_partial(y1_tr_pred))
-    mse_baseline_tst = metrics.mean_squared_error(flat_partial(y1_tst), flat_partial(y0_tst))
-    mse_model_tst = metrics.mean_squared_error(flat_partial(y1_tst), flat_partial(y1_tst_pred))
+    # Evaluation
+    mse_y1_y1_pred_tr = metrics.mean_squared_error(y1_tr.numpy(), y1_tr_pred.numpy())
+    mse_y1_y1_pred_tst = metrics.mean_squared_error(y1_tst.numpy(), y1_tst_pred.numpy())
 
-    mse_list.append([baseline_tr, modelmse_tr, baseline_tst, modelmse_tst])
+    mse_y1_y0_tr = metrics.mean_squared_error(y1_tr.numpy(), y0_tr.numpy())
+    mse_y1_y0_tst = metrics.mean_squared_error(y1_tst.numpy(), y0_tst.numpy())
 
-    r2_baseline_tr = metrics.r2_score(flat_partial(y1_tr), flat_partial(y0_tr))
-    r2_model_tr = metrics.r2_score(flat_partial(y1_tr), flat_partial(y1_tr_pred))
-    r2_baseline_tst = metrics.r2_score(flat_partial(y1_tst), flat_partial(y0_tst))
-    r2_model_tst = metrics.r2_score(flat_partial(y1_tst), flat_partial(y1_tst_pred))
+    mse_y1_y1_mean_tr = metrics.mean_squared_error(y1_tr.numpy(), np.full_like(y1_tr.numpy(), y1_tr.numpy().mean(axis=0)))
+    mse_y1_y1_mean_tst = metrics.mean_squared_error(y1_tst.numpy(), np.full_like(y1_tst.numpy(), y1_tst.numpy().mean(axis=0)))
 
-    r2_list.append([r2_baseline_tr, r2_model_tr, r2_baseline_tst, r2_model_tst])
+    mse_list.append([
+        mse_y1_y1_pred_tr,
+        mse_y1_y1_pred_tst,
+        mse_y1_y0_tr,
+        mse_y1_y0_tst,
+        mse_y1_y1_mean_tr,
+        mse_y1_y1_mean_tst
+    ])
+    r2_y1_y1_pred_tr = metrics.r2_score(y1_tr.numpy(), y1_tr_pred.numpy())
+    r2_y1_y1_pred_tst = metrics.r2_score(y1_tst.numpy(), y1_tst_pred.numpy())
+
+    r2_y1_y0_tr = metrics.r2_score(y1_tr.numpy(), y0_tr.numpy())
+    r2_y1_y0_tst = metrics.r2_score(y1_tst.numpy(), y0_tst.numpy())
+
+    r2_list.append([
+        r2_y1_y1_pred_tr,
+        r2_y1_y1_pred_tst,
+        r2_y1_y0_tr,
+        r2_y1_y0_tst
+    ])
 
 # Saving the metrics
 mse_list = np.array(mse_list)
 r2_list = np.array(r2_list)
-os.makedirs('data/generated/c_elegans_evaluation_metrics', exist_ok=True)
-np.savetxt(f'data/generated/c_elegans_evaluation_metrics/mse_list_{algorithm}_worm_{worm_num}', mse_list)
-np.savetxt(f'data/generated/c_elegans_evaluation_metrics/r2_list_{algorithm}_worm_{worm_num}', r2_list)
+os.makedirs('data/generated/quantitative_evaluation/evaluation_metrics/c_elegans', exist_ok=True)
+np.savetxt(f'data/generated/quantitative_evaluation/evaluation_metrics/c_elegans/mse_list_{algorithm}_worm_{worm_num}', mse_list)
+np.savetxt(f'data/generated/quantitative_evaluation/evaluation_metrics/c_elegans/r2_list_{algorithm}_worm_{worm_num}', r2_list)

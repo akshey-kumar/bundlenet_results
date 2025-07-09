@@ -6,7 +6,7 @@ from ncmcm.visualisers.latent_space import LatentSpaceVisualiser
 b_names = ['Dorsal turn', 'Forward', 'No state', 'Reverse-1', 'Reverse-2', 'Sustained reversal', 'Slowing', 'Ventral turn']
 b_names = {idx:name for idx, name in enumerate(b_names)}
 for worm_num in range(5):
-    for algorithm in [ 'bundlenet', 'rnn_autoencoder', 'lda', 'pca','tsne_optimised', 'autoencoder_optimised', 'dynamics_autoencoder_optimised', 'cebra_hybrid_optimised']:
+    for algorithm in ['rnn_autoencoder']: #[ 'bundlenet', 'rnn_autoencoder', 'lda', 'pca','tsne_optimised', 'autoencoder_optimised', 'dynamics_autoencoder_optimised', 'cebra_hybrid_optimised']:
         # Plotting
         y0_ = np.loadtxt(f'data/generated/embeddings/c_elegans/y0__{algorithm}_worm_{worm_num}')
         b_ = np.loadtxt(f'data/generated/embeddings/c_elegans/b__{algorithm}_worm_{worm_num}').astype(int)

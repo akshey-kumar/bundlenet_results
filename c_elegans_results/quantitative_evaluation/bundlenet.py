@@ -6,7 +6,7 @@ from ncmcm.bundlenet.utils import prep_data, timeseries_train_test_split
 from ncmcm.visualisers.latent_space import LatentSpaceVisualiser
 
 # load Data (excluding behavioural neurons) and plot
-for worm_num in range(5):
+for worm_num in [0]: #range(5):
     algorithm = 'bundlenet'
     b_neurons = [
         'AVAR',
@@ -37,7 +37,8 @@ for worm_num in range(5):
         b_type='discrete',
         gamma=0.9,
         learning_rate=0.001,
-        n_epochs=1500,
+        n_epochs=2000,
+        validation_data=(x_test, b_test),
         initialisation='best_of_5_init',
     )
 
