@@ -18,6 +18,7 @@ for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
     lowest_loss = float("inf")
     for _ in range(5):
         # fit CEBRA hybrid - Optimal hyperparameters for this dataset are taken from CEBRA own demo notebook
+        # see https://cebra.ai/docs/demo_notebooks/Demo_hippocampus.html
         cebra_hybrid_model = CEBRA(
             model_architecture='offset10-model',
             batch_size=512,

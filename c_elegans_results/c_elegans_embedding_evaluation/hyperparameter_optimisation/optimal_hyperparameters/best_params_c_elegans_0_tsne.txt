@@ -1,0 +1,6 @@
+Min loss: 0.22176119685173035
+Best hyperparameters found were:
+perplexity: 13.372368268498056
+early_exaggeration: 31.68117393100013
+n_iter: 2423.3311374373307
+win: 10.861162643452484

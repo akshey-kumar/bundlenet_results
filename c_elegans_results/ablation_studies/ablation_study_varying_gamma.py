@@ -26,7 +26,7 @@ b = data.behaviour
 # prepare data for BunDLe Net
 x_, b_ = prep_data(x, b, win=1)
 
-for gamma in [0.9]: #[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0.99, 0.999]:
+for gamma in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0.99, 0.999]:
     print(f'gamma: {gamma}')
     algorithm = 'bundlenet_ablation_study'
     if gamma==0.0:
@@ -44,7 +44,7 @@ for gamma in [0.9]: #[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0.99,
         gamma=gamma,
         learning_rate=0.001,
         n_epochs=1000,
-        #initialisation='best_of_5_init',
+        initialisation='best_of_5_init',
     )
     plt.figure()
     for i, label in enumerate([

@@ -1,0 +1,7 @@
+Min loss: 4.931689313204272e-06
+Best hyperparameters found were:
+lr: 0.0014057882878623295
+epochs: 109.2968251007042
+batch_size: 96.0
+win: 12.388713412623767
+layers_idx: 3.78631568228178
