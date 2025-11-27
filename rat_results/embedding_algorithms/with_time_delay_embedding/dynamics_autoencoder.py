@@ -1,3 +1,4 @@
+
 import numpy as np
 from sklearn.metrics import mean_squared_error
 from ncmcm.bundlenet.utils import prep_data
@@ -8,6 +9,16 @@ from torch.utils.data import DataLoader, TensorDataset
 
 
 algorithm = 'dynamics_autoencoder'
+# optimal hyperparameters chosen as a result of parameter tuning
+# see rat_results/embedding_algorithms/hyperparameter_optimisation/dynamics_autoencoder.py
+'''
+Best hyperparameters found were:
+lr: 0.004169807344148425
+epochs: 992
+batch_size: 511
+win: 2
+layers_idx: 2 -> [50, 30, 25, 10]
+'''
 for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
     # Load data
     data = np.load(f'data/raw/rat_hippocampus/{rat_name}.npz')
@@ -15,7 +26,7 @@ for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
     x = x - np.min(x)  # cebra doesn't work otherwise if there are negative values
 
     # time delay embedding
-    x_, b_ = prep_data(x, b, win=1)
+    x_, b_ = prep_data(x, b, win=2)
     x0_ = x_[:, 0, :, :]
     x1_ = x_[:, 1, :, :]
     xdiff_ = x1_ - x0_
@@ -34,30 +45,30 @@ for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
             # Encoder
             self.encoder = nn.Sequential(
                 nn.Flatten(),
-                nn.Linear(in_features, 100),
+                nn.Linear(in_features, 50),
                 nn.ReLU(),
-                nn.Linear(100, 150),
+                nn.Linear(50, 30),
                 nn.ReLU(),
-                nn.Linear(150, 50),
+                nn.Linear(30, 25),
                 nn.ReLU(),
-                nn.Linear(50, 10),
+                nn.Linear(25, 10),
                 nn.ReLU(),
-                nn.Linear(10, latent_dim)  # Linear activation (default)
+                nn.Linear(10, latent_dim)
             )
 
             # Decoder
             self.decoder = nn.Sequential(
                 nn.Linear(latent_dim, 10),
                 nn.ReLU(),
-                nn.Linear(10, 50),
+                nn.Linear(10, 25),
                 nn.ReLU(),
-                nn.Linear(50, 150),
+                nn.Linear(25, 30),
                 nn.ReLU(),
-                nn.Linear(150, 100),
+                nn.Linear(30, 50),
                 nn.ReLU(),
-                nn.Linear(100, in_features),
-                nn.Linear(in_features, in_features),  # Linear activation (default)
-                nn.Unflatten(1, input_shape[-2:])  # Reshape back to original shape
+                nn.Linear(50, in_features),
+                nn.Linear(in_features, in_features),
+                nn.Unflatten(1, input_shape[-2:])
             )
 
         def forward(self, x):
@@ -65,20 +76,23 @@ for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
             decoded = self.decoder(encoded)
             return decoded
 
+
+    # data loader for training
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    x0_tensor = torch.from_numpy(x0_).float().to(device)
+    xdiff_tensor = torch.from_numpy(xdiff_).float().to(device)
+    train_loader = DataLoader(TensorDataset(x0_tensor, xdiff_tensor), batch_size=511, shuffle=True)
+
     # five fits of the model and pick the best model
     best_model = None
     lowest_loss = float("inf")
     for _ in range(5):
         # fit the autoencoder to data
-        latent_dim = 3
-        model = Autoencoder(latent_dim=3, input_shape=x0_.shape)
-        optimizer = optim.Adam(model.parameters(), lr=0.00723241566576686)
+        model = Autoencoder(latent_dim=3, input_shape=x0_.shape).to(device)
+        optimizer = optim.Adam(model.parameters(), lr=0.004169807344148425)
         criterion = nn.MSELoss()
-        x0_ = torch.tensor(x0_, dtype=torch.float32)
-        xdiff_ = torch.tensor(xdiff_, dtype=torch.float32)
-        train_loader = DataLoader(TensorDataset(x0_, xdiff_), batch_size=382, shuffle=True)
 
-        epochs = 278
+        epochs = 992
         for epoch in range(epochs):
             model.train()
             for x_batch, xdiff_batch in train_loader:
@@ -91,10 +105,10 @@ for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
         # evaluate
         model.eval()
         with torch.no_grad():
-            xdiff_pred = model(x0_).numpy()
+            xdiff_pred = model(x0_tensor).cpu().numpy()
             # inverse scaling the data
             xdiff_pred, xdiff_ = xdiff_pred * xdmax, xdiff_ * xdmax
-            x1_pred = x0_.numpy() + xdiff_pred
+            x1_pred = x0_ + xdiff_pred
 
         loss = mean_squared_error(x1_.reshape(x1_.shape[0], -1), x1_pred.reshape(x1_pred.shape[0], -1))
         print('mse:', round(loss, 8))
@@ -102,10 +116,10 @@ for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
         if loss < lowest_loss:
             best_model, lowest_loss = model, loss
 
-
+    print('lowest loss achieved:', round(lowest_loss, 8))
     # project into latent space
     with torch.no_grad():
-        y_ = model.encoder(x0_).numpy()
+        y_ = best_model.encoder(x0_tensor).cpu().numpy()
 
     # save the weights
     save_model = True

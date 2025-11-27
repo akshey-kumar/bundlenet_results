@@ -8,6 +8,16 @@ from torch.utils.data import DataLoader, TensorDataset
 
 
 algorithm = 'autoencoder'
+# optimal hyperparameters chosen as a result of parameter tuning
+# see rat_results/embedding_algorithms/hyperparameter_optimisation/autoencoder.py
+'''
+Best hyperparameters found were:
+lr: 0.015540653524918275
+epochs: 401
+batch_size: 511
+win: 1
+layers_idx: 1 -> [100, 150, 50, 10],  # Increasing then Decreasing Architecture
+'''
 for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
     # Load data
     data = np.load(f'data/raw/rat_hippocampus/{rat_name}.npz')
@@ -67,12 +77,12 @@ for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
         # fit the autoencoder to data
         latent_dim = 3
         model = Autoencoder(latent_dim, input_shape=x_.shape)
-        optimizer = optim.Adam(model.parameters(), lr=0.0010628744197015334)
+        optimizer = optim.Adam(model.parameters(), lr=0.015540653524918275)
         criterion = nn.MSELoss()
         x_ = torch.tensor(x_, dtype=torch.float32)
-        train_loader = DataLoader(TensorDataset(x_, x_), batch_size=276, shuffle=True)
+        train_loader = DataLoader(TensorDataset(x_, x_), batch_size=511, shuffle=True)
 
-        epochs = 267
+        epochs = 401
         for epoch in range(epochs):
             model.train()
             for batch in train_loader:
