@@ -9,8 +9,7 @@ rat_name = 'achilles' #, 'gatsby','cicero', 'buddy'
 
 data = np.load(f'data/raw/rat_hippocampus/{rat_name}.npz')
 x, b = data['x'], data['b']
-x = x - np.min(x)  # cebra doesn't work otherwise if there are negative values
-np.where(x < 0)
+x = x - np.min(x)
 x_, b_ = prep_data(x, b, win=20)
 
 # Train test split
@@ -60,7 +59,8 @@ for gamma in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99, 0.999, 1]:
     # Plotting latent space dynamics
     vis = LatentSpaceVisualiser(y0_, b_, data.behaviour_names, show_points=True)
     # vis.plot_latent_timeseries()
-    # vis.plot_phase_space()
-    vis.rotating_plot(filename=f'figures/rotation_{algorithm}_rat_{rat_name}_gamma_{gamma}.gif', show_fig=False,
-                      arrow_length_ratio=0.01)
+    vis.plot_phase_space()
+    plt.show()
+    # vis.rotating_plot(filename=f'figures/rotation_{algorithm}_rat_{rat_name}_gamma_{gamma}.gif', show_fig=False,
+    #                  arrow_length_ratio=0.01)
 plt.show()

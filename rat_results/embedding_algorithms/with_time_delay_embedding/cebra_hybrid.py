@@ -2,7 +2,6 @@ import numpy as np
 from cebra import CEBRA
 from ncmcm.bundlenet.utils import prep_data
 
-
 algorithm = 'cebra_hybrid'
 for rat_name in ['achilles', 'gatsby', 'cicero', 'buddy']:
     # Load data
