@@ -7,7 +7,8 @@ from sklearn.linear_model import LinearRegression
 from behaviour_alignment import behaviour_alignment
 import seaborn as sns
 
-algorithms = ['bundlenet', 'bundlenet_linear', 'cebra_hybrid', 'pca_tde', 'cca_tde', 'rrr_tde']
+algorithms = ['bundlenet', 'bundlenet_linear', 'bundlenet_win_1', 'cebra_hybrid', 'pca_tde', 'cca_tde', 'rrr_tde']
+#algorithms = ['bundlenet_win_1']
 for algorithm in algorithms:
     rat_names = ['achilles', 'gatsby', 'cicero', 'buddy']
     reg_scores = np.zeros((len(rat_names), len(rat_names)))
