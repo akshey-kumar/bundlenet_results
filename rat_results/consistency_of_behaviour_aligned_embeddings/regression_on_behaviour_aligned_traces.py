@@ -42,7 +42,7 @@ for algorithm in algorithms:
     plt.rcParams.update({'font.size': font_size})
 
     # Plot the heatmap
-    ax = sns.heatmap(reg_scores, annot=True, fmt=".2f", cmap='YlGnBu',
+    ax = sns.heatmap(reg_scores, annot=True, fmt=".2f", cmap='cividis',
                 cbar_kws={'label': 'Regression Score'},
                 xticklabels=['rat 1', 'rat 2', 'rat 3', 'rat 4'],
                 yticklabels=['rat 1', 'rat 2', 'rat 3', 'rat 4'],

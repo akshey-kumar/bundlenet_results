@@ -5,6 +5,8 @@ from interpolation import interpolate_bouts
 from time_alignment import extract_bouts
 from sklearn.model_selection import cross_val_score
 from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
+
 
 algorithm = 'BunDLeNet'
 worm_num = 0
@@ -17,12 +19,15 @@ Y1_tst = np.loadtxt(file_pattern.format('Y1_tst'))
 B_train_1 = np.loadtxt(file_pattern.format('B_train_1')).astype(int)
 B_test_1 = np.loadtxt(file_pattern.format('B_test_1')).astype(int)
 
-bout_indices, next_b, _ = extract_bouts(B_train_1, b=5)
+
+bout_indices, next_b, _ = extract_bouts(B_train_1, b=7) # anaylsing the braiching points of behaviours 5 (sus rev) and 7 (ventral turn)
 Y_bouts = [Y0_tr[idx] for idx in bout_indices]
 Y_bouts = interpolate_bouts(Y_bouts, t_steps_interp=20, show_plot=True)
+print(next_b)
 
 # Define the classifier
 clf = LogisticRegression()
+#clf = LinearSVC(C=0.35, penalty='l2')
 n_folds = 5
 scores = np.zeros((Y_bouts.shape[2], n_folds))
 
@@ -41,7 +46,8 @@ plt.fill_between(np.linspace(0, 1, 20),
                  mean_scores + std_error,
                  color="b", alpha=0.2)
 plt.xlabel("normalised time")
-plt.ylabel("decoding score (f1)")
+plt.ylabel("decoding accuracy")
+plt.ylim([0.5, 1])
 plt.grid(True)
 
 plt.show()
