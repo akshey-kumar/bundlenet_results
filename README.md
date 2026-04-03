@@ -2,7 +2,6 @@
 
 This repository contains all code required to reproduce the results and figures from the BunDLe-Net paper.
 
----
 
 ## Setup
 
@@ -49,7 +48,6 @@ Ensure it is installed and accessible in your Python environment.
 - b: `rat_results/consistency_of_behaviour_aligned_embeddings/`
 - c: `rat_results/behaviour_decoding_analysis/`
 
----
 
 ### Supplementary Figures
 
