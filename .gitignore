@@ -37,7 +37,7 @@ temp/best_of_5_runs_models/
 
 # big data files
 data/raw/monkey_reaching_preload_smth_40/
-
+monkey_results/data/monkey_reaching_preload_smth_40
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
